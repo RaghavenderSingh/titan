@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String?
+  avatar    String?
+  githubId  String?   @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id          String       @id @default(uuid())
+  name        String
+  repoUrl     String
+  framework   String       @default("nextjs")
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deployments Deployment[]
+  domains     Domain[]
+  buildConfig BuildConfig?
+
+  @@index([userId])
+}
+
+model Deployment {
+  id            String   @id @default(uuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  commitSha     String
+  commitMessage String?
+  branch        String   @default("main")
+  status        String   @default("queued") // queued, building, ready, error
+  buildLogs     String?  @db.Text
+  deploymentUrl String?
+  s3Key         String?
+  errorMessage  String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  domains       Domain[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model Domain {
+  id           String      @id @default(uuid())
+  domain       String      @unique
+  projectId    String
+  project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deploymentId String?
+  deployment   Deployment? @relation(fields: [deploymentId], references: [id], onDelete: SetNull)
+  verified     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([projectId])
+}
+
+model BuildConfig {
+  id             String   @id @default(uuid())
+  projectId      String   @unique
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  buildCommand   String   @default("npm run build")
+  installCommand String   @default("npm install")
+  outputDir      String   @default(".next")
+  nodeVersion    String   @default("18")
+  envVars        Json? // Store as JSON
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
