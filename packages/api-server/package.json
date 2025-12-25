@@ -15,12 +15,15 @@
     "@types/bun": "latest",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.3",
+    "@types/socket.io": "^3.0.2",
     "prisma": "5.22.0"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@octokit/auth-oauth-app": "^9.0.3",
+    "@octokit/rest": "^22.0.1",
     "@prisma/client": "5.22.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -29,6 +32,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "ioredis": "^5.8.2",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.8.1"
   }
 }

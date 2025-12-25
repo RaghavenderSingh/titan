@@ -66,6 +66,24 @@ export async function getDeploymentsByProject(projectId: string) {
   });
 }
 
+export async function getDeploymentsByUser(userId: string) {
+  return prisma.deployment.findMany({
+    where: {
+      project: {
+        userId: userId,
+      },
+    },
+    include: {
+      project: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function updateDeploymentStatus(
   deploymentId: string,
   status: DeploymentStatus,

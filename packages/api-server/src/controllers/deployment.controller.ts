@@ -4,6 +4,7 @@ import {
   createDeployment,
   getDeploymentById,
   getDeploymentsByProject,
+  getDeploymentsByUser,
 } from "../services/deployment.service";
 
 export const createDeployments = async (
@@ -79,6 +80,20 @@ export const cancelDeployments = async (
 
     const deployment = await cancelDeployment(deploymentId);
     res.json(deployment);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listDeployments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = (req as any).user.id;
+    const deployments = await getDeploymentsByUser(userId);
+    res.json(deployments);
   } catch (error) {
     next(error);
   }

@@ -4,6 +4,7 @@ import {
   getDeployment,
   getDeploymentByProject,
   cancelDeployments,
+  listDeployments,
 } from "../controllers/deployment.controller";
 import { authMiddleware } from "../middleware/auth";
 
@@ -11,6 +12,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get("/", listDeployments);
 router.post("/", createDeployments);
 router.get("/:deploymentId", getDeployment);
 router.get("/project/:projectId", getDeploymentByProject);
