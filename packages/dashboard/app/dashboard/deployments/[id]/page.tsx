@@ -7,7 +7,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { useDeploymentUpdates, useDeploymentLogs, useSocket } from "@/lib/useSocket";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, GitBranch, GitCommit, ChevronLeft } from "lucide-react";
+import { ExternalLink, GitBranch, GitCommit, ChevronLeft, Loader2 } from "lucide-react";
 import { DeploymentStatusBadge } from "@/components/deployments/DeploymentStatusBadge";
 import { DeploymentTerminal } from "@/components/deployments/DeploymentTerminal";
 import { motion } from "framer-motion";
@@ -65,7 +65,7 @@ export default function DeploymentLogsPage() {
     }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+  if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-muted-foreground" /></div>;
   if (!deployment) return <div className="h-screen flex items-center justify-center">Deployment not found</div>;
 
   // Combine historical and live logs
@@ -75,7 +75,7 @@ export default function DeploymentLogsPage() {
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Sticky Header */}
       <div className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -96,7 +96,7 @@ export default function DeploymentLogsPage() {
            </div>
            
            <div className="flex items-center gap-4">
-                <div className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${connected ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                <div className={`hidden md:flex text-xs font-bold uppercase tracking-wider items-center gap-2 ${connected ? 'text-emerald-500' : 'text-muted-foreground'}`}>
                     <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
                     {connected ? 'Live Connection' : 'Offline'}
                 </div>
@@ -148,7 +148,7 @@ export default function DeploymentLogsPage() {
                 </div>
                 <div className="p-4 border-t border-border">
                     <h3 className="font-bold mb-1">Preview</h3>
-                    <p className="text-xs text-muted-foreground truncate">{deployment.deploymentUrl}</p>
+                    <p className="text-xs text-muted-foreground truncate">{deployment.deploymentUrl || "Pending..."}</p>
                 </div>
             </div>
 

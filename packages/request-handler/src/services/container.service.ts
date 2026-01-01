@@ -39,11 +39,13 @@ export class ContainerService {
         logger.container.start('', deploymentId, { port });
 
         let container;
+        let createStart = Date.now();
 
         if (s3Key && s3Key.startsWith("docker:")) {
             // Scenario A: Custom Docker Image
             const imageName = s3Key.replace("docker:", "");
             logger.info('Booting custom Docker image', { deploymentId, imageName });
+            const createStart = Date.now();
 
             container = await docker.createContainer({
                 Image: imageName,
@@ -67,6 +69,7 @@ export class ContainerService {
         } else {
             // Scenario B: Standard Node (Legacy) - Mount local path
             logger.info('Booting standard Node.js runtime', { deploymentId, localPath });
+            const createStart = Date.now();
             const absolutePath = path.resolve(localPath);
 
             // Detect start command - prioritize server.js for Next.js standalone builds
@@ -125,9 +128,12 @@ export class ContainerService {
         }
 
         await container.start();
+        logger.debug('Docker container started', { durationMs: Date.now() - createStart, deploymentId });
 
         // Wait for container to be healthy (proper health checking)
+        const healthStart = Date.now();
         await this.waitForHealthy(port, deploymentId, 30000);
+        logger.debug('Container health verified', { durationMs: Date.now() - healthStart, totalBootTime: Date.now() - createStart, deploymentId });
 
         this.containers.set(deploymentId, {
             containerId: container.id,

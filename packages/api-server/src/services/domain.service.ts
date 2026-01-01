@@ -58,7 +58,7 @@ export async function verifyDomain(projectId: string, domain: string) {
       try {
           // 1. Check CNAME
           // In a real production environment, this would be your platform's main domain
-          const expectedCname = process.env.PLATFORM_DOMAIN || 'vercel-clone.com'; 
+          const expectedCname = process.env.PLATFORM_DOMAIN || 'titan-app.com'; 
           const cnames = await dns.resolveCname(domain);
           if (cnames.some(c => c.includes(expectedCname))) {
               isVerified = true;
@@ -91,7 +91,7 @@ export async function verifyDomain(projectId: string, domain: string) {
   }
 
   // If verification fails, throw an error so the UI knows
-  throw new Error("DNS verification failed. Please set a CNAME to vercel-clone.com or A record to 127.0.0.1");
+  throw new Error("DNS verification failed. Please set a CNAME to titan-app.com or A record to 127.0.0.1");
 }
 
 export async function getDomains(projectId: string) {

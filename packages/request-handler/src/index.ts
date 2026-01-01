@@ -98,13 +98,16 @@ app.all("*", async (req, res) => {
         const s3Key = deployment.s3Key || "";
         const isDockerImage = s3Key.startsWith("docker:");
         const outputDir = path.join("/tmp/deployments", deployment.id);
+        const startTime = Date.now();
 
         // Only download artifacts if it's NOT a custom docker image
         // (Custom images are already in the docker daemon, no files needed locally)
         if (!isDockerImage) {
             if (!fs.existsSync(outputDir)) {
                 logger.info('Cache miss - downloading deployment', { deploymentId: deployment.id, outputDir });
+                const dlStart = Date.now();
                 await s3Service.downloadDeployment(deployment.id, outputDir);
+                logger.debug('S3 Download complete', { durationMs: Date.now() - dlStart });
             } else {
                 logger.debug('Cache hit - deployment ready', { deploymentId: deployment.id });
             }
@@ -114,7 +117,9 @@ app.all("*", async (req, res) => {
 
         // 3. Get / Start Container
         try {
+            const containerStart = Date.now();
             const containerPort = await containerService.getPort(deployment.id, s3Key, outputDir);
+            logger.debug('Container ready', { durationMs: Date.now() - containerStart });
 
             logger.debug('Proxying request to container', {
                 deploymentId: deployment.id,
@@ -130,7 +135,7 @@ app.all("*", async (req, res) => {
             });
 
             // 4. Proxy to Container with retry logic
-            let retries = 10; // Increased retries for slower cold starts
+            let retries = 20; // Increased to 20 retries (~30 seconds) to handle slower cold starts
             const attemptProxy = () => {
                 proxy.web(req, res, {
                     target: `http://127.0.0.1:${containerPort}`,
@@ -141,12 +146,14 @@ app.all("*", async (req, res) => {
                 }, (err) => {
                     if (err && retries > 0 && !res.headersSent) {
                         retries--;
-                        logger.warn('Proxy attempt failed, retrying', {
-                            attempt: 10 - retries,
-                            maxRetries: 10,
-                            containerPort,
-                            error: err.message
-                        });
+                        // Only log warning every 5 retries to avoid log spam
+                        if (retries % 5 === 0) {
+                            logger.warn('Proxy attempt failed, retrying...', {
+                                remainingRetries: retries,
+                                containerPort,
+                                error: err.message
+                            });
+                        }
                         setTimeout(attemptProxy, 1500); // Retry after 1.5 seconds
                     } else if (err) {
                         logger.error('All proxy retries failed', err, { containerPort });
@@ -159,7 +166,10 @@ app.all("*", async (req, res) => {
                     }
                 });
             };
+            const proxyStart = Date.now();
             attemptProxy();
+            // Note: attemptProxy handles the response, but we can log total time here if we returned a promise, but we don't.
+            logger.debug('Total handler duration explicitly tracked', { totalMs: Date.now() - startTime });
 
         } catch (error) {
             logger.error('Runtime error starting container', error instanceof Error ? error : new Error(String(error)), {

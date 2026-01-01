@@ -322,17 +322,43 @@ export default function ProjectDetailPage() {
                                     </div>
                                 </div>
 
-                                <div className="w-full xl:w-[320px] aspect-[4/3] xl:aspect-square shrink-0 border border-white/5 bg-black/50 relative overflow-hidden group/preview rounded-xl">
-                                    <img 
-                                        src={`https://api.microlink.io/?url=${encodeURIComponent(latestDeployment?.deploymentUrl || 'https://deploy.app')}&screenshot=true&embed=screenshot.url&colorScheme=dark&viewport.width=1024&viewport.height=1024`}
-                                        className="w-full h-full object-cover opacity-80 group-hover/preview:opacity-100 transition-all duration-500"
-                                        alt="Deployment Preview"
-                                    />
-                                    <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl pointer-events-none" />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/preview:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px]">
-                                        <div className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold shadow-xl transform translate-y-2 group-hover/preview:translate-y-0 transition-transform duration-300 flex items-center gap-2">
-                                            Visit Deployment <ExternalLink className="h-3 w-3" />
+                                <div className="w-full xl:w-[320px] aspect-[4/3] xl:aspect-square shrink-0 border border-white/5 bg-zinc-900/50 relative overflow-hidden group/preview rounded-xl ring-1 ring-white/10">
+                                    {latestDeployment?.status === 'ready' ? (
+                                        <div className="w-[200%] h-[200%] absolute top-0 left-0 origin-top-left transform scale-50 bg-white">
+                                            <iframe
+                                                src={latestDeployment.deploymentUrl}
+                                                className="w-full h-full border-0"
+                                                title="Deployment Preview"
+                                                sandbox="allow-scripts allow-same-origin"
+                                                loading="lazy"
+                                            />
+                                            {/* Mask to prevent interaction with iframe */}
+                                            <div className="absolute inset-0 z-10" />
                                         </div>
+                                    ) : (
+                                        /* Loading State / Placeholder */
+                                        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center animate-pulse">
+                                                    <Loader2 className="h-5 w-5 text-zinc-500 animate-spin" />
+                                                 </div>
+                                                 <p className="text-xs font-medium text-zinc-500">
+                                                    {latestDeployment?.status === 'building' ? 'Building Preview...' : 'Waiting for deployment...'}
+                                                 </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Hover Overlay */}
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/preview:opacity-100 transition-opacity duration-300 backdrop-blur-[2px] z-20 flex items-center justify-center">
+                                         <a 
+                                            href={latestDeployment?.deploymentUrl} 
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="px-5 py-2.5 rounded-full bg-white text-black text-xs font-bold shadow-2xl hover:scale-105 transition-transform flex items-center gap-2 transform translate-y-2 group-hover/preview:translate-y-0 duration-300"
+                                         >
+                                            Visit Deployment <ExternalLink className="h-3.5 w-3.5" />
+                                         </a>
                                     </div>
                                 </div>
                            </div>

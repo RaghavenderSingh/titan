@@ -57,7 +57,7 @@ export default function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center text-xs space-y-4 md:space-y-0">
           <div>
-            &copy; {new Date().getFullYear()} Deply Inc. All rights reserved.
+            &copy; {new Date().getFullYear()} Titan Inc. All rights reserved.
           </div>
           <div className="flex space-x-8">
             <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
