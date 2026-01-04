@@ -20,24 +20,7 @@ export default function DashboardLayout({
     }
   }, [status, router]);
 
-  useEffect(() => {
-    const syncToken = async () => {
-      if (session?.user?.email) {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            try {
-                const { data } = await authAPI.login(session.user.email, session.user.name || undefined);
-                if (data.token) {
-                    localStorage.setItem("token", data.token);
-                }
-            } catch (error) {
-                console.error("Failed to sync token:", error);
-            }
-        }
-      }
-    };
-    syncToken();
-  }, [session]);
+
 
   if (status === "loading") {
     return (

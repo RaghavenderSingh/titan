@@ -18,6 +18,9 @@ const logger = createLogger('build-worker');
 const socket = io(process.env.API_URL || "http://localhost:3000");
 const docker = new Docker({ socketPath: process.env.DOCKER_SOCKET_PATH || "/var/run/docker.sock" });
 
+const CONTAINER_BUILD_BASE = "/tmp/builds";
+const HOST_BUILD_BASE = process.env.HOST_BUILD_PATH || "/tmp/builds";
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return String(error);
@@ -31,7 +34,8 @@ async function runCommandInContainer(
   command: string,
   args: string[],
   deploymentId: string,
-  buildPath: string,
+  containerBuildPath: string,
+  hostBuildPath: string,
   userEnvVars: Record<string, string> = {}
 ): Promise<void> {
   const image = "node:20-alpine"; // Lightweight base image
@@ -63,7 +67,7 @@ async function runCommandInContainer(
       Env: safeEnv,  // SECURITY: Filtered environment variables only
       WorkingDir: "/app",
       HostConfig: {
-        Binds: [`${buildPath}:/app`], // Mount build dir to /app
+        Binds: [`${hostBuildPath}:/app`], // Mount host build dir to /app
         AutoRemove: true, // Cleanup after exit
       },
     });
@@ -254,8 +258,8 @@ export async function processBuild(job: BuildJob) {
   // Initialize logs for this deployment
   buildLogsMap.set(job.deploymentId, []);
   
-  const workDir = "/tmp/builds";
-  const buildPath = path.join(workDir, job.deploymentId);
+  const buildPath = path.join(CONTAINER_BUILD_BASE, job.deploymentId);
+  const hostBuildPath = path.join(HOST_BUILD_BASE, job.deploymentId);
 
   try {
     await updateStatus(job.deploymentId, DeploymentStatus.BUILDING);
@@ -283,12 +287,12 @@ export async function processBuild(job: BuildJob) {
         );
     } else {
         // --- STANDARD NODE.JS FLOW ---
-        await installDependencies(job.deploymentId, job.installCommand, buildPath);
+        await installDependencies(job.deploymentId, job.installCommand, buildPath, hostBuildPath);
 
         // Auto-configure Project (Magic Build)
         await configureProject(job.deploymentId, buildPath);
 
-        await runBuild(job.deploymentId, job.buildCommand, buildPath, job.envVars);
+        await runBuild(job.deploymentId, job.buildCommand, buildPath, hostBuildPath, job.envVars);
 
         const outputDir = await detectOutputDirectory(buildPath);
         emitLog(job.deploymentId, `Uploading to S3...`);
@@ -381,7 +385,8 @@ async function cloneRepo(
 async function installDependencies(
   deploymentId: string,
   installCommand: string,
-  buildPath: string
+  buildPath: string,
+  hostBuildPath: string
 ) {
   logger.info('Installing dependencies', { deploymentId, installCommand });
   emitLog(deploymentId, `Installing dependencies: ${installCommand}\n`);
@@ -396,6 +401,7 @@ async function installDependencies(
     args,
     deploymentId,
     buildPath,
+    hostBuildPath,
     {} // No user env vars for install
   );
 
@@ -407,6 +413,7 @@ async function runBuild(
   deploymentId: string,
   buildCommand: string,
   buildPath: string,
+  hostBuildPath: string,
   envVars?: Record<string, string>
 ) {
   // Check if build script exists in package.json
@@ -448,6 +455,7 @@ async function runBuild(
     args,
     deploymentId,
     buildPath,
+    hostBuildPath,
     envVars || {} // User-provided env vars (will be filtered)
   );
 

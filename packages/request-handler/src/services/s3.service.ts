@@ -22,7 +22,7 @@ export class S3Service {
 
   async downloadDeployment(deploymentId: string, outputDir: string) {
     console.log(`Downloading deployment ${deploymentId} to ${outputDir}...`);
-    const prefix = `deployments/${deploymentId}`;
+    const prefix = `deployments/${deploymentId}/`;
 
     let continuationToken: string | undefined;
     let allKeys: string[] = [];
@@ -79,6 +79,9 @@ export class S3Service {
         // Optional: Progress log
         if ((i + BATCH_SIZE) % 100 === 0) console.log(`Downloaded ${i + BATCH_SIZE}/${allKeys.length}...`);
     }
+
+    // Write a marker file to signal download completion
+    await writeFile(path.join(outputDir, ".ready"), "");
 
     console.log(`Downloaded deployment ${deploymentId} successfully.`);
   }

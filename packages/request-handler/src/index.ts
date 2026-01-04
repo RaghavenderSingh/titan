@@ -94,31 +94,35 @@ app.all("*", async (req, res) => {
             return;
         }
 
-        // 2. Determine Deployment Type & Fetch Code if needed
+        // 2. Check Deployment Status
+        if (deployment.status !== "ready") {
+            const status = deployment.status.toLowerCase();
+            const message = status === "error" 
+                ? "Deployment failed. Please check build logs." 
+                : `Deployment is currently ${status}. Please refresh in a few seconds.`;
+            
+            res.status(status === "error" ? 500 : 202).send(`
+                <html>
+                    <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #000; color: #fff;">
+                        <h2>${message}</h2>
+                        <p style="color: #666;">Status: ${status.toUpperCase()}</p>
+                        ${status !== "error" ? '<script>setTimeout(() => window.location.reload(), 3000)</script>' : ''}
+                    </body>
+                </html>
+            `);
+            return;
+        }
+
+        // 3. Determine Deployment Type
         const s3Key = deployment.s3Key || "";
-        const isDockerImage = s3Key.startsWith("docker:");
         const outputDir = path.join("/tmp/deployments", deployment.id);
         const startTime = Date.now();
 
-        // Only download artifacts if it's NOT a custom docker image
-        // (Custom images are already in the docker daemon, no files needed locally)
-        if (!isDockerImage) {
-            if (!fs.existsSync(outputDir)) {
-                logger.info('Cache miss - downloading deployment', { deploymentId: deployment.id, outputDir });
-                const dlStart = Date.now();
-                await s3Service.downloadDeployment(deployment.id, outputDir);
-                logger.debug('S3 Download complete', { durationMs: Date.now() - dlStart });
-            } else {
-                logger.debug('Cache hit - deployment ready', { deploymentId: deployment.id });
-            }
-            // Mark as accessed for LRU cache management
-            await deploymentCache.markAccessed(deployment.id);
-        }
-
-        // 3. Get / Start Container
+        // 3. Get / Start Container (Handles download if needed via mutex)
         try {
             const containerStart = Date.now();
             const containerPort = await containerService.getPort(deployment.id, s3Key, outputDir);
+
             logger.debug('Container ready', { durationMs: Date.now() - containerStart });
 
             logger.debug('Proxying request to container', {
@@ -138,7 +142,7 @@ app.all("*", async (req, res) => {
             let retries = 20; // Increased to 20 retries (~30 seconds) to handle slower cold starts
             const attemptProxy = () => {
                 proxy.web(req, res, {
-                    target: `http://127.0.0.1:${containerPort}`,
+                    target: `http://host.docker.internal:${containerPort}`,
                     changeOrigin: false,
                     preserveHeaderKeyCase: false,
                     followRedirects: false,

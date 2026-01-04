@@ -26,7 +26,7 @@ export async function createDeployment(
   });
 
   // Update deployment URL with the deployment ID
-  const requestHandlerDomain = process.env.REQUEST_HANDLER_DOMAIN || "localhost:3001";
+  const requestHandlerDomain = process.env.REQUEST_HANDLER_DOMAIN || "localhost:3002";
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
   const updatedDeployment = await prisma.deployment.update({
     where: { id: deployment.id },

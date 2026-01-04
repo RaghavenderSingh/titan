@@ -14,9 +14,9 @@ export class S3Service {
     this.s3 = new AWS.S3({
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION || "ap-south-1",
+      region: process.env.AWS_REGION || "us-east-1",
     });
-    this.bucket = process.env.S3_BUCKET || "vercel-clone-builds";
+    this.bucket = process.env.S3_BUCKET || "vercel-clones";
   }
 
   async uploadDirectory(localPath: string, s3Prefix: string) {

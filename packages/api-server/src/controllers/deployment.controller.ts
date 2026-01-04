@@ -73,7 +73,7 @@ export const deployProject = async (
             zipPath: targetPath // <--- NEW FIELD
         });
 
-        const requestHandlerDomain = process.env.REQUEST_HANDLER_DOMAIN || "localhost:3001";
+        const requestHandlerDomain = process.env.REQUEST_HANDLER_DOMAIN || "localhost:3002";
         const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
 
         res.status(201).json({

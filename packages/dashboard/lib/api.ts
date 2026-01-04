@@ -84,8 +84,8 @@ export const setAuthToken = (token: string) => {
 };
 
 export const authAPI = {
-  login: (email: string, name?: string) =>
-    api.post("/auth/login", { email, name }),
+  login: (email: string, password?: string) =>
+    api.post("/auth/login", { email, password }),
 };
 
 export const projectsAPI = {
