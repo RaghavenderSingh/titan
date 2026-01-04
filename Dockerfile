@@ -46,13 +46,16 @@ WORKDIR /app/packages/dashboard
 RUN bun run build
 
 # Dashboard runner (minimal production image)
-FROM oven/bun:1 AS dashboard-runner
+FROM node:20-alpine AS dashboard-runner
 WORKDIR /app
 COPY --from=dashboard-builder /app/packages/dashboard/.next/standalone ./
-COPY --from=dashboard-builder /app/packages/dashboard/.next/static ./packages/dashboard/.next/static
-COPY --from=dashboard-builder /app/packages/dashboard/public ./packages/dashboard/public
+COPY --from=dashboard-builder /app/packages/dashboard/.next/static ./.next/static
+COPY --from=dashboard-builder /app/packages/dashboard/public ./public
+ENV NODE_ENV=production
+# Install production dependencies (standalone build has package.json)
+RUN npm install --omit=dev
 EXPOSE 3000
-CMD ["bun", "server.js"]
+CMD ["node", "server.js"]
 
 # Stage 4: Build API Server
 FROM builder-base AS api-builder
@@ -63,7 +66,7 @@ RUN bun run build
 FROM deps AS api-server
 COPY --from=api-builder /app/packages/db ./packages/db
 COPY --from=api-builder /app/packages/shared ./packages/shared
-COPY --from=api-builder /app/packages/api-server/dist ./packages/api-server/dist
+COPY --from=api-builder /app/packages/api-server ./packages/api-server
 WORKDIR /app/packages/api-server
 EXPOSE 3001
 CMD ["bun", "dist/index.js"]
@@ -77,7 +80,7 @@ RUN bun run build
 FROM deps AS request-handler
 COPY --from=request-handler-builder /app/packages/db ./packages/db
 COPY --from=request-handler-builder /app/packages/shared ./packages/shared
-COPY --from=request-handler-builder /app/packages/request-handler/dist ./packages/request-handler/dist
+COPY --from=request-handler-builder /app/packages/request-handler ./packages/request-handler
 WORKDIR /app/packages/request-handler
 EXPOSE 3002
 CMD ["bun", "dist/index.js"]
@@ -92,6 +95,6 @@ FROM deps AS build-worker
 COPY --from=build-worker-builder /app/packages/db ./packages/db
 COPY --from=build-worker-builder /app/packages/shared ./packages/shared
 COPY --from=build-worker-builder /app/packages/ai-service ./packages/ai-service
-COPY --from=build-worker-builder /app/packages/build-worker/dist ./packages/build-worker/dist
+COPY --from=build-worker-builder /app/packages/build-worker ./packages/build-worker
 WORKDIR /app/packages/build-worker
 CMD ["bun", "dist/index.js"]
