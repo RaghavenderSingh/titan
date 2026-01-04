@@ -248,7 +248,12 @@ async function buildUserImage(deploymentId: string, buildPath: string) {
     }
 }
 
+const buildLogsMap = new Map<string, string[]>();
+
 export async function processBuild(job: BuildJob) {
+  // Initialize logs for this deployment
+  buildLogsMap.set(job.deploymentId, []);
+  
   const workDir = "/tmp/builds";
   const buildPath = path.join(workDir, job.deploymentId);
 
@@ -320,6 +325,8 @@ export async function processBuild(job: BuildJob) {
     }
   } finally {
     await cleanup(buildPath);
+    // Clean up logs from memory to prevent leaks
+    buildLogsMap.delete(job.deploymentId);
   }
 }
 
@@ -518,11 +525,15 @@ async function updateStatus(
   status: DeploymentStatus,
   logs?: string
 ) {
+  // Get accumulated logs
+  const currentLogs = buildLogsMap.get(deploymentId) || [];
+  const fullLogs = currentLogs.join('\n');
+
   await prisma.deployment.update({
     where: { id: deploymentId },
     data: {
       status,
-      buildLogs: logs,
+      buildLogs: fullLogs, // Save full logs
       updatedAt: new Date(),
     },
   });
@@ -530,11 +541,16 @@ async function updateStatus(
   socket.emit("deployment-update", {
     deploymentId,
     status,
-    logs,
+    logs: fullLogs, // Send full logs
     timestamp: new Date().toISOString(),
   });
 }
 function emitLog(deploymentId: string, log: string) {
+  // Store log in memory
+  const currentLogs = buildLogsMap.get(deploymentId) || [];
+  currentLogs.push(log);
+  buildLogsMap.set(deploymentId, currentLogs);
+
   socket.emit("deployment-log", {
     deploymentId,
     log,

@@ -77,7 +77,7 @@ const csrfProtection = csrf({
 // Rate limiting configuration
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: 1000, // Increased for development
   message: { error: "Too many login/register attempts, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,

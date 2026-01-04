@@ -42,6 +42,7 @@ import { EnvVarsSettings } from "@/components/projects/settings/EnvVarsSettings"
 import { DomainSettings } from "@/components/projects/settings/DomainSettings";
 import { BuildSettings } from "@/components/projects/settings/BuildSettings";
 import { DangerZone } from "@/components/projects/settings/DangerZone";
+import { DeploymentLogs } from "@/components/projects/DeploymentLogs";
 
 interface Deployment {
   id: string;
@@ -364,41 +365,11 @@ export default function ProjectDetailPage() {
                            </div>
                         </section>
 
-                        <section className="rounded-[2rem] border border-white/5 bg-black/20 p-8 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                                    <Terminal className="h-4 w-4" />
-                                    Deployment Console
-                                </h3>
-                                <div className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] font-mono text-emerald-500 uppercase">Live</span>
-                                </div>
-                            </div>
-                            <div className="bg-black/80 rounded-xl p-6 font-mono text-xs border border-white/5 space-y-2.5 max-h-60 overflow-y-auto custom-scrollbar shadow-inner shadow-black/50">
-                                <div className="flex gap-3 text-zinc-500 border-b border-white/5 pb-2 mb-2">
-                                    <span>$</span>
-                                    <span>deply-cli build --production</span>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <p className="text-emerald-400 flex items-center gap-2">
-                                        <span className="opacity-50">✓</span> Detected framework: <span className="text-white">{project.framework}</span>
-                                    </p>
-                                    <p className="text-blue-400 flex items-center gap-2">
-                                        <span className="opacity-50">→</span> Running build: <span className="text-white">{project.buildConfig.buildCommand}</span>
-                                    </p>
-                                    <p className="text-zinc-400 flex items-center gap-2 pt-1">
-                                        <span className="opacity-50">ℹ</span> Build completed successfully in <span className="text-white">45.2s</span>
-                                    </p>
-                                    <p className="text-emerald-400 flex items-center gap-2">
-                                        <span className="opacity-50">✓</span> Uploading to edge cache...
-                                    </p>
-                                    <p className="text-emerald-400 flex items-center gap-2 font-bold pt-1">
-                                        <span className="opacity-50">✓</span> Deployment ready!
-                                    </p>
-                                </div>
-                            </div>
-                        </section>
+                        <DeploymentLogs 
+                            deploymentId={latestDeployment?.id} 
+                            initialLogs={latestDeployment?.buildLogs}
+                            status={latestDeployment?.status}
+                        />
                     </div>
 
                     <div className="space-y-6">
